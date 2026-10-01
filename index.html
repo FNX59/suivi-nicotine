@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Suivi nicotine</title>
+<meta name="theme-color" content="#0f766e">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root {
+  --bg: #f1f5f9;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --brand: #0f766e;
+  --patch: #2563eb;
+  --gum: #15803d;
+  --spray: #9333ea;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+button {
+  font-family: inherit;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+.app { max-width: 960px; margin: 0 auto; padding: 16px; }
+header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+header h1 { font-size: 1.25rem; margin: 0; }
+header .date { color: var(--muted); font-size: .95rem; text-transform: capitalize; }
+
+/* ---------- Écran principal ---------- */
+.counters { display: grid; grid-template-columns: 1fr; grid-gap: 14px; }
+@media (min-width: 700px), (orientation: landscape) {
+  .counters { grid-template-columns: repeat(3, 1fr); }
+}
+.counter { background: var(--card); border-radius: 18px; padding: 12px; box-shadow: 0 1px 3px rgba(15,23,42,.12); }
+.add {
+  width: 100%;
+  border: 0;
+  border-radius: 14px;
+  color: #fff;
+  padding: 18px 10px;
+  text-align: center;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+.add:active { -webkit-transform: scale(.98); transform: scale(.98); }
+.add .lbl { display: block; font-size: 1.1rem; font-weight: 600; }
+.add .num { display: block; font-size: 3.6rem; font-weight: 700; line-height: 1.1; margin: 4px 0; }
+.add .plus { display: block; font-size: 1rem; opacity: .9; }
+.add.patch { background: var(--patch); }
+.add.gum { background: var(--gum); }
+.add.spray { background: var(--spray); }
+.counter .sub { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: .85rem; color: var(--muted); }
+.undo { background: none; border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px; color: var(--text); font-size: .9rem; }
+.undo[disabled] { opacity: .4; cursor: default; }
+
+.bigbtn {
+  display: block; width: 100%; margin-top: 18px; padding: 16px;
+  border: 0; border-radius: 14px; background: var(--brand); color: #fff;
+  font-size: 1.1rem; font-weight: 600;
+}
+.install {
+  display: block; width: 100%; margin-top: 12px; padding: 14px;
+  border: 2px solid var(--brand); border-radius: 14px; background: transparent; color: var(--brand);
+  font-size: 1rem; font-weight: 600;
+}
+.install.hidden { display: none; }
+.reset {
+  display: block; width: 100%; margin-top: 12px; padding: 14px;
+  border: 2px solid #ef4444; border-radius: 14px; background: transparent; color: #ef4444;
+  font-size: 1rem; font-weight: 600;
+}
+.note { color: var(--muted); font-size: .8rem; text-align: center; margin-top: 14px; }
+
+/* ---------- Statistiques ---------- */
+.hidden { display: none; }
+.topbar { display: flex; align-items: center; margin-bottom: 12px; }
+.back { border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 8px 14px; font-size: 1rem; color: var(--text); }
+.spacer { -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; }
+.csv { border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 8px 14px; font-size: .9rem; color: var(--text); }
+.tabs { display: flex; margin-bottom: 12px; background: var(--line); border-radius: 12px; padding: 3px; }
+.tab { -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; border: 0; background: transparent; padding: 10px 4px; border-radius: 10px; font-size: .95rem; color: var(--muted); font-weight: 600; }
+.tab.on { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgba(15,23,42,.15); }
+.nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.nav button { border: 1px solid var(--line); background: var(--card); border-radius: 10px; width: 44px; height: 40px; font-size: 1.2rem; color: var(--text); }
+.nav button[disabled] { opacity: .35; cursor: default; }
+.nav .title { font-weight: 600; text-align: center; padding: 0 8px; }
+.panel { background: var(--card); border-radius: 18px; padding: 14px; box-shadow: 0 1px 3px rgba(15,23,42,.12); margin-bottom: 14px; }
+.totals { display: grid; grid-template-columns: repeat(3, 1fr); grid-gap: 10px; }
+.tot { border-radius: 12px; padding: 10px 6px; text-align: center; color: #fff; }
+.tot.patch { background: var(--patch); }
+.tot.gum { background: var(--gum); }
+.tot.spray { background: var(--spray); }
+.tot .v { font-size: 1.8rem; font-weight: 700; line-height: 1.1; }
+.tot .l { font-size: .8rem; opacity: .95; }
+.tot .a { font-size: .72rem; opacity: .85; margin-top: 2px; }
+.chart { display: flex; align-items: flex-end; height: 170px; border-bottom: 1px solid var(--line); margin-top: 6px; }
+.col { -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; min-width: 0; margin: 0 1px; display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; }
+.col .seg { width: 100%; }
+.col .seg.patch { background: var(--patch); }
+.col .seg.gum { background: var(--gum); }
+.col .seg.spray { background: var(--spray); }
+.col .seg:first-child { border-radius: 3px 3px 0 0; }
+.xlabels { display: flex; margin-top: 4px; }
+.xlabels span { -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; min-width: 0; margin: 0 1px; text-align: center; font-size: .65rem; color: var(--muted); overflow: hidden; }
+.xlabels.big span { font-size: .8rem; }
+.xlabels span.now { color: var(--text); font-weight: 700; }
+.legend { display: flex; flex-wrap: wrap; font-size: .8rem; color: var(--muted); margin-top: 10px; }
+.legend span { margin-right: 14px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; }
+.legend i.patch { background: var(--patch); }
+.legend i.gum { background: var(--gum); }
+.legend i.spray { background: var(--spray); }
+.empty { color: var(--muted); text-align: center; padding: 16px 0; font-size: .95rem; }
+
+.log { list-style: none; margin: 0; padding: 0; }
+.log li { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.log li:last-child { border-bottom: 0; }
+.log .hour { width: 56px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.log .dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 10px; }
+.log .dot.patch { background: var(--patch); }
+.log .dot.gum { background: var(--gum); }
+.log .dot.spray { background: var(--spray); }
+.log .name { -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; }
+.log .del { border: 0; background: none; color: var(--muted); font-size: 1.2rem; padding: 4px 10px; }
+
+.hist { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.hist th { text-align: right; color: var(--muted); font-weight: 600; padding: 6px 4px; font-size: .75rem; }
+.hist th:first-child, .hist td:first-child { text-align: left; }
+.hist td { text-align: right; padding: 10px 4px; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.hist td:first-child { text-transform: capitalize; font-weight: 600; }
+h2.sec { font-size: 1rem; margin: 0 0 8px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== Écran principal ===== -->
+  <section id="home">
+    <header>
+      <h1>Suivi nicotine</h1>
+      <div class="date" id="today-label"></div>
+    </header>
+    <div class="counters" id="counters"></div>
+    <button class="bigbtn" id="open-stats" type="button">Statistiques</button>
+    <button class="install hidden" id="install" type="button">Installer l'application</button>
+    <button class="reset" id="reset-data" type="button">Réinitialiser les données</button>
+    <p class="note">Les données restent uniquement sur cet appareil.</p>
+  </section>
+
+  <!-- ===== Statistiques ===== -->
+  <section id="stats" class="hidden">
+    <div class="topbar">
+      <button class="back" id="back" type="button">&larr; Retour</button>
+      <div class="spacer"></div>
+      <button class="csv" id="export" type="button">Exporter (CSV)</button>
+    </div>
+    <div class="tabs" id="tabs">
+      <button class="tab on" data-view="day" type="button">Jour</button>
+      <button class="tab" data-view="week" type="button">Semaine</button>
+      <button class="tab" data-view="month" type="button">Mois</button>
+      <button class="tab" data-view="history" type="button">Historique</button>
+    </div>
+    <div id="stats-body"></div>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var STORAGE_KEY = 'nicotrack.events.v1';
+  var TYPES = [
+    { id: 'patch', label: 'Patch 21 mg', short: 'Patchs' },
+    { id: 'gum',   label: 'Gomme',       short: 'Gommes' },
+    { id: 'spray', label: 'Spray',       short: 'Sprays' }
+  ];
+  var MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  var DAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+  var DAYS_SHORT = ['L', 'M', 'M', 'J', 'V', 'S', 'D']; // lundi -> dimanche
+
+  /* ---------- Stockage ---------- */
+  var events = load();
+
+  function load() {
+    try {
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) { return []; }
+      var arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  function save() {
+    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(events)); } catch (e) { /* stockage indisponible */ }
+  }
+
+  /* ---------- Dates ---------- */
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function dayKey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function addDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+  function daysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
+  function mondayOf(d) {
+    var wd = (d.getDay() + 6) % 7; // 0 = lundi
+    return addDays(startOfDay(d), -wd);
+  }
+  function fmtDayLong(d) { return DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()]; }
+  function fmtDayShort(d) { return d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0, 4) + (MONTHS[d.getMonth()].length > 4 ? '.' : ''); }
+  function fmtTime(ts) { var d = new Date(ts); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+  function typeById(id) { for (var i = 0; i < TYPES.length; i++) { if (TYPES[i].id === id) { return TYPES[i]; } } return null; }
+
+  /* ---------- Agrégation ---------- */
+  function emptyCounts() { return { patch: 0, gum: 0, spray: 0 }; }
+  function buildIndex() {
+    var map = {};
+    for (var i = 0; i < events.length; i++) {
+      var ev = events[i];
+      if (!ev || !typeById(ev.k)) { continue; }
+      var key = dayKey(new Date(ev.t));
+      if (!map[key]) { map[key] = emptyCounts(); }
+      map[key][ev.k] += 1;
+    }
+    return map;
+  }
+  function sumCounts(c) { return c.patch + c.gum + c.spray; }
+  function round1(x) { return (Math.round(x * 10) / 10).toString().replace('.', ','); }
+
+  /* ---------- Petit utilitaire DOM ---------- */
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) { n.className = cls; }
+    if (text !== undefined && text !== null) { n.textContent = text; }
+    return n;
+  }
+  function clear(n) { while (n.firstChild) { n.removeChild(n.firstChild); } }
+
+  /* ---------- Écran principal ---------- */
+  var countersEl = document.getElementById('counters');
+  var todayLabel = document.getElementById('today-label');
+  var numEls = {};
+  var undoEls = {};
+
+  function buildHome() {
+    TYPES.forEach(function (t) {
+      var card = el('div', 'counter');
+      var btn = el('button', 'add ' + t.id);
+      btn.type = 'button';
+      btn.appendChild(el('span', 'lbl', t.label));
+      var num = el('span', 'num', '0');
+      btn.appendChild(num);
+      btn.appendChild(el('span', 'plus', '+1'));
+      btn.addEventListener('click', function () { addEvent(t.id); });
+      card.appendChild(btn);
+
+      var sub = el('div', 'sub');
+      sub.appendChild(el('span', null, "aujourd'hui"));
+      var undo = el('button', 'undo', '\u22121');
+      undo.type = 'button';
+      undo.addEventListener('click', function () { undoLast(t.id); });
+      sub.appendChild(undo);
+      card.appendChild(sub);
+
+      countersEl.appendChild(card);
+      numEls[t.id] = num;
+      undoEls[t.id] = undo;
+    });
+  }
+
+  function refreshHome() {
+    var now = new Date();
+    todayLabel.textContent = fmtDayLong(now);
+    var c = buildIndex()[dayKey(now)] || emptyCounts();
+    TYPES.forEach(function (t) {
+      numEls[t.id].textContent = c[t.id];
+      undoEls[t.id].disabled = c[t.id] === 0;
+    });
+  }
+
+  function addEvent(kind) {
+    events.push({ t: Date.now(), k: kind });
+    save();
+    refreshHome();
+    if (navigator.vibrate) { try { navigator.vibrate(15); } catch (e) { /* ignore */ } }
+  }
+
+  function undoLast(kind) {
+    var today = dayKey(new Date());
+    for (var i = events.length - 1; i >= 0; i--) {
+      if (events[i].k === kind && dayKey(new Date(events[i].t)) === today) {
+        events.splice(i, 1);
+        save();
+        break;
+      }
+    }
+    refreshHome();
+  }
+
+  /* ---------- Statistiques ---------- */
+  var homeEl = document.getElementById('home');
+  var statsEl = document.getElementById('stats');
+  var bodyEl = document.getElementById('stats-body');
+  var tabsEl = document.getElementById('tabs');
+  var state = { view: 'day', offset: 0 };
+
+  function showStats() {
+    homeEl.classList.add('hidden');
+    statsEl.classList.remove('hidden');
+    state.offset = 0;
+    renderStats();
+    window.scrollTo(0, 0);
+  }
+  function showHome() {
+    statsEl.classList.add('hidden');
+    homeEl.classList.remove('hidden');
+    refreshHome();
+  }
+
+  function setView(v) {
+    state.view = v;
+    state.offset = 0;
+    var tabs = tabsEl.querySelectorAll('.tab');
+    for (var i = 0; i < tabs.length; i++) {
+      if (tabs[i].getAttribute('data-view') === v) { tabs[i].classList.add('on'); } else { tabs[i].classList.remove('on'); }
+    }
+    renderStats();
+  }
+
+  function renderNav(title, canNext) {
+    var nav = el('div', 'nav');
+    var prev = el('button', null, '\u2039');
+    prev.type = 'button';
+    prev.setAttribute('aria-label', 'Précédent');
+    prev.addEventListener('click', function () { state.offset -= 1; renderStats(); });
+    var next = el('button', null, '\u203A');
+    next.type = 'button';
+    next.setAttribute('aria-label', 'Suivant');
+    next.disabled = !canNext;
+    next.addEventListener('click', function () { state.offset += 1; renderStats(); });
+    nav.appendChild(prev);
+    nav.appendChild(el('div', 'title', title));
+    nav.appendChild(next);
+    return nav;
+  }
+
+  function renderTotals(total, nbDays) {
+    var wrap = el('div', 'totals');
+    TYPES.forEach(function (t) {
+      var box = el('div', 'tot ' + t.id);
+      box.appendChild(el('div', 'v', total[t.id]));
+      box.appendChild(el('div', 'l', t.short));
+      if (nbDays > 1) { box.appendChild(el('div', 'a', round1(total[t.id] / nbDays) + ' / jour')); }
+      wrap.appendChild(box);
+    });
+    return wrap;
+  }
+
+  // days : [{label, now, c}]
+  function renderChart(days, bigLabels) {
+    var max = 1;
+    days.forEach(function (d) { var s = sumCounts(d.c); if (s > max) { max = s; } });
+    var H = 150;
+    var chart = el('div', 'chart');
+    var labels = el('div', 'xlabels' + (bigLabels ? ' big' : ''));
+    days.forEach(function (d, idx) {
+      var col = el('div', 'col');
+      var total = sumCounts(d.c);
+      col.title = d.label + ' : ' + total;
+      // du haut vers le bas : spray, gomme, patch (le patch est en bas)
+      ['spray', 'gum', 'patch'].forEach(function (k) {
+        if (d.c[k] > 0) {
+          var seg = el('div', 'seg ' + k);
+          seg.style.height = Math.max(3, Math.round(d.c[k] / max * H)) + 'px';
+          col.appendChild(seg);
+        }
+      });
+      chart.appendChild(col);
+      var showLabel = bigLabels || days.length <= 10 || idx === 0 || (idx + 1) % 5 === 0 || idx === days.length - 1;
+      var sp = el('span', d.now ? 'now' : null, showLabel ? d.short : '');
+      labels.appendChild(sp);
+    });
+    var legend = el('div', 'legend');
+    TYPES.forEach(function (t) {
+      var s = el('span');
+      s.appendChild(el('i', t.id));
+      s.appendChild(document.createTextNode(t.short));
+      legend.appendChild(s);
+    });
+    var box = el('div');
+    box.appendChild(chart);
+    box.appendChild(labels);
+    box.appendChild(legend);
+    return box;
+  }
+
+  function panel(child) { var p = el('div', 'panel'); p.appendChild(child); return p; }
+
+  function renderDay(index) {
+    var today = startOfDay(new Date());
+    var d = addDays(today, state.offset);
+    var key = dayKey(d);
+    var c = index[key] || emptyCounts();
+
+    bodyEl.appendChild(renderNav(state.offset === 0 ? "Aujourd'hui \u00B7 " + fmtDayLong(d) : fmtDayLong(d), state.offset < 0));
+    bodyEl.appendChild(panel(renderTotals(c, 1)));
+
+    var list = [];
+    for (var i = 0; i < events.length; i++) {
+      if (typeById(events[i].k) && dayKey(new Date(events[i].t)) === key) { list.push(events[i]); }
+    }
+    list.sort(function (a, b) { return a.t - b.t; });
+
+    var p = el('div', 'panel');
+    p.appendChild(el('h2', 'sec', 'Prises de la journée (' + list.length + ')'));
+    if (list.length === 0) {
+      p.appendChild(el('div', 'empty', 'Aucune prise enregistrée.'));
+    } else {
+      var ul = el('ul', 'log');
+      list.forEach(function (ev) {
+        var li = el('li');
+        li.appendChild(el('span', 'hour', fmtTime(ev.t)));
+        li.appendChild(el('span', 'dot ' + ev.k));
+        li.appendChild(el('span', 'name', typeById(ev.k).label));
+        var del = el('button', 'del', '\u00D7');
+        del.type = 'button';
+        del.setAttribute('aria-label', 'Supprimer cette prise');
+        del.addEventListener('click', function () {
+          if (window.confirm('Supprimer cette prise (' + fmtTime(ev.t) + ', ' + typeById(ev.k).label + ') ?')) {
+            var pos = events.indexOf(ev);
+            if (pos >= 0) { events.splice(pos, 1); save(); }
+            renderStats();
+          }
+        });
+        li.appendChild(del);
+        ul.appendChild(li);
+      });
+      p.appendChild(ul);
+    }
+    bodyEl.appendChild(p);
+  }
+
+  function renderWeek(index) {
+    var today = startOfDay(new Date());
+    var monday = addDays(mondayOf(today), state.offset * 7);
+    var sunday = addDays(monday, 6);
+    var days = [];
+    var total = emptyCounts();
+    var elapsed = 0;
+    for (var i = 0; i < 7; i++) {
+      var d = addDays(monday, i);
+      var c = index[dayKey(d)] || emptyCounts();
+      var future = d.getTime() > today.getTime();
+      if (!future) { elapsed += 1; }
+      TYPES.forEach(function (t) { total[t.id] += c[t.id]; });
+      days.push({ label: fmtDayLong(d), short: DAYS_SHORT[i], now: d.getTime() === today.getTime(), c: c });
+    }
+    var title = (state.offset === 0 ? 'Cette semaine \u00B7 ' : 'Semaine du ') + fmtDayShort(monday) + ' au ' + fmtDayShort(sunday);
+    bodyEl.appendChild(renderNav(title, state.offset < 0));
+    bodyEl.appendChild(panel(renderTotals(total, Math.max(elapsed, 1))));
+    bodyEl.appendChild(panel(renderChart(days, true)));
+  }
+
+  function renderMonth(index) {
+    var now = new Date();
+    var today = startOfDay(now);
+    var ref = new Date(now.getFullYear(), now.getMonth() + state.offset, 1);
+    var y = ref.getFullYear();
+    var m = ref.getMonth();
+    var n = daysInMonth(y, m);
+    var days = [];
+    var total = emptyCounts();
+    var elapsed = 0;
+    for (var i = 1; i <= n; i++) {
+      var d = new Date(y, m, i);
+      var c = index[dayKey(d)] || emptyCounts();
+      if (d.getTime() <= today.getTime()) { elapsed += 1; }
+      TYPES.forEach(function (t) { total[t.id] += c[t.id]; });
+      days.push({ label: fmtDayLong(d), short: String(i), now: d.getTime() === today.getTime(), c: c });
+    }
+    var title = MONTHS[m].charAt(0).toUpperCase() + MONTHS[m].slice(1) + ' ' + y + (state.offset === 0 ? ' (en cours)' : '');
+    bodyEl.appendChild(renderNav(title, state.offset < 0));
+    bodyEl.appendChild(panel(renderTotals(total, Math.max(elapsed, 1))));
+    bodyEl.appendChild(panel(renderChart(days, false)));
+  }
+
+  function renderHistory(index) {
+    var keys = Object.keys(index).sort();
+    var p = el('div', 'panel');
+    p.appendChild(el('h2', 'sec', 'Mois'));
+    if (keys.length === 0) {
+      p.appendChild(el('div', 'empty', 'Aucune donnée pour le moment.'));
+      bodyEl.appendChild(p);
+      return;
+    }
+    var first = keys[0].split('-');
+    var now = new Date();
+    var y = parseInt(first[0], 10);
+    var m = parseInt(first[1], 10) - 1;
+    var months = [];
+    while (y < now.getFullYear() || (y === now.getFullYear() && m <= now.getMonth())) {
+      months.push({ y: y, m: m });
+      m += 1;
+      if (m > 11) { m = 0; y += 1; }
+    }
+    months.reverse();
+
+    var table = el('table', 'hist');
+    var thead = el('thead');
+    var hr = el('tr');
+    ['Mois', 'Patchs', 'Gommes', 'Sprays', 'Moy./jour*'].forEach(function (h) { hr.appendChild(el('th', null, h)); });
+    thead.appendChild(hr);
+    table.appendChild(thead);
+    var tbody = el('tbody');
+    months.forEach(function (mo) {
+      var total = emptyCounts();
+      var n = daysInMonth(mo.y, mo.m);
+      var elapsed = n;
+      var isCurrent = mo.y === now.getFullYear() && mo.m === now.getMonth();
+      if (isCurrent) { elapsed = now.getDate(); }
+      for (var i = 1; i <= n; i++) {
+        var c = index[mo.y + '-' + pad(mo.m + 1) + '-' + pad(i)];
+        if (c) { TYPES.forEach(function (t) { total[t.id] += c[t.id]; }); }
+      }
+      var tr = el('tr');
+      tr.appendChild(el('td', null, MONTHS[mo.m] + ' ' + mo.y + (isCurrent ? ' •' : '')));
+      TYPES.forEach(function (t) { tr.appendChild(el('td', null, total[t.id])); });
+      tr.appendChild(el('td', null, round1(sumCounts(total) / Math.max(elapsed, 1))));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    p.appendChild(table);
+    p.appendChild(el('div', 'note', '* Moyenne de prises (tous types confondus) par jour. • = mois en cours.'));
+    bodyEl.appendChild(p);
+  }
+
+  function renderStats() {
+    clear(bodyEl);
+    var index = buildIndex();
+    if (state.view === 'day') { renderDay(index); }
+    else if (state.view === 'week') { renderWeek(index); }
+    else if (state.view === 'month') { renderMonth(index); }
+    else { renderHistory(index); }
+  }
+
+  /* ---------- Export CSV ---------- */
+  function exportCsv() {
+    var rows = events.slice().sort(function (a, b) { return a.t - b.t; });
+    var lines = ['Date;Heure;Type'];
+    rows.forEach(function (ev) {
+      var t = typeById(ev.k);
+      if (!t) { return; }
+      var d = new Date(ev.t);
+      lines.push(dayKey(d) + ';' + fmtTime(ev.t) + ';' + t.label);
+    });
+    var blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'suivi-nicotine-' + dayKey(new Date()) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  /* ---------- Réinitialisation ---------- */
+  var resetBtn = document.getElementById('reset-data');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', function () {
+      if (window.confirm('Êtes-vous sûr de vouloir supprimer TOUTES vos données ? Cette action est irréversible.')) {
+        events = [];
+        save();
+        refreshHome();
+        if (!statsEl.classList.contains('hidden')) {
+          renderStats();
+        }
+      }
+    });
+  }
+
+  /* ---------- Installation (Chrome) ---------- */
+  var installBtn = document.getElementById('install');
+  var deferredPrompt = null;
+
+  function isStandalone() {
+    return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+      window.navigator.standalone === true;
+  }
+
+  window.addEventListener('beforeinstallprompt', function (e) {
+    // e.preventDefault(); // On ne fait pas preventDefault() pour laisser Chrome proposer l'installation automatiquement
+    deferredPrompt = e;
+    if (!isStandalone()) { installBtn.classList.remove('hidden'); }
+  });
+
+  installBtn.addEventListener('click', function () {
+    if (!deferredPrompt) { return; }
+    var promptEvent = deferredPrompt;
+    deferredPrompt = null;
+    installBtn.classList.add('hidden');
+    // L'événement ne peut servir qu'une fois : Chrome en renverra un nouveau si l'installation redevient possible.
+    promptEvent.prompt();
+  });
+
+  window.addEventListener('appinstalled', function () {
+    deferredPrompt = null;
+    installBtn.classList.add('hidden');
+  });
+
+  /* ---------- Initialisation ---------- */
+  buildHome();
+  refreshHome();
+
+  document.getElementById('open-stats').addEventListener('click', showStats);
+  document.getElementById('back').addEventListener('click', showHome);
+  document.getElementById('export').addEventListener('click', exportCsv);
+  tabsEl.addEventListener('click', function (e) {
+    var t = e.target;
+    while (t && t !== tabsEl && !(t.getAttribute && t.getAttribute('data-view'))) { t = t.parentNode; }
+    if (t && t !== tabsEl) { setView(t.getAttribute('data-view')); }
+  });
+
+  // Mise à jour si l'application reste ouverte à minuit ou revient au premier plan
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) {
+      events = load();
+      if (statsEl.classList.contains('hidden')) { refreshHome(); } else { renderStats(); }
+    }
+  });
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () { /* hors HTTPS / file:// */ });
+  });
+}
+</script>
+</body>
+</html>
