@@ -19,6 +19,7 @@
   --patch: #2563eb;
   --gum: #15803d;
   --spray: #9333ea;
+  --cig: #ef4444;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
@@ -46,7 +47,7 @@ header .date { color: var(--muted); font-size: .95rem; text-transform: capitaliz
 /* ---------- Écran principal ---------- */
 .counters { display: grid; grid-template-columns: 1fr; grid-gap: 14px; }
 @media (min-width: 700px), (orientation: landscape) {
-  .counters { grid-template-columns: repeat(3, 1fr); }
+  .counters { grid-template-columns: repeat(4, 1fr); }
 }
 .counter { background: var(--card); border-radius: 18px; padding: 12px; box-shadow: 0 1px 3px rgba(15,23,42,.12); }
 .add {
@@ -67,6 +68,7 @@ header .date { color: var(--muted); font-size: .95rem; text-transform: capitaliz
 .add.patch { background: var(--patch); }
 .add.gum { background: var(--gum); }
 .add.spray { background: var(--spray); }
+.add.cig { background: var(--cig); }
 .counter .sub { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: .85rem; color: var(--muted); }
 .undo { background: none; border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px; color: var(--text); font-size: .9rem; }
 .undo[disabled] { opacity: .4; cursor: default; }
@@ -103,11 +105,12 @@ header .date { color: var(--muted); font-size: .95rem; text-transform: capitaliz
 .nav button[disabled] { opacity: .35; cursor: default; }
 .nav .title { font-weight: 600; text-align: center; padding: 0 8px; }
 .panel { background: var(--card); border-radius: 18px; padding: 14px; box-shadow: 0 1px 3px rgba(15,23,42,.12); margin-bottom: 14px; }
-.totals { display: grid; grid-template-columns: repeat(3, 1fr); grid-gap: 10px; }
+.totals { display: grid; grid-template-columns: repeat(4, 1fr); grid-gap: 10px; }
 .tot { border-radius: 12px; padding: 10px 6px; text-align: center; color: #fff; }
 .tot.patch { background: var(--patch); }
 .tot.gum { background: var(--gum); }
 .tot.spray { background: var(--spray); }
+.tot.cig { background: var(--cig); }
 .tot .v { font-size: 1.8rem; font-weight: 700; line-height: 1.1; }
 .tot .l { font-size: .8rem; opacity: .95; }
 .tot .a { font-size: .72rem; opacity: .85; margin-top: 2px; }
@@ -117,6 +120,7 @@ header .date { color: var(--muted); font-size: .95rem; text-transform: capitaliz
 .col .seg.patch { background: var(--patch); }
 .col .seg.gum { background: var(--gum); }
 .col .seg.spray { background: var(--spray); }
+.col .seg.cig { background: var(--cig); }
 .col .seg:first-child { border-radius: 3px 3px 0 0; }
 .xlabels { display: flex; margin-top: 4px; }
 .xlabels span { -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; min-width: 0; margin: 0 1px; text-align: center; font-size: .65rem; color: var(--muted); overflow: hidden; }
@@ -128,6 +132,7 @@ header .date { color: var(--muted); font-size: .95rem; text-transform: capitaliz
 .legend i.patch { background: var(--patch); }
 .legend i.gum { background: var(--gum); }
 .legend i.spray { background: var(--spray); }
+.legend i.cig { background: var(--cig); }
 .empty { color: var(--muted); text-align: center; padding: 16px 0; font-size: .95rem; }
 
 .log { list-style: none; margin: 0; padding: 0; }
@@ -138,6 +143,7 @@ header .date { color: var(--muted); font-size: .95rem; text-transform: capitaliz
 .log .dot.patch { background: var(--patch); }
 .log .dot.gum { background: var(--gum); }
 .log .dot.spray { background: var(--spray); }
+.log .dot.cig { background: var(--cig); }
 .log .name { -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; }
 .log .del { border: 0; background: none; color: var(--muted); font-size: 1.2rem; padding: 4px 10px; }
 
@@ -191,7 +197,8 @@ h2.sec { font-size: 1rem; margin: 0 0 8px; }
   var TYPES = [
     { id: 'patch', label: 'Patch 21 mg', short: 'Patchs' },
     { id: 'gum',   label: 'Gomme',       short: 'Gommes' },
-    { id: 'spray', label: 'Spray',       short: 'Sprays' }
+    { id: 'spray', label: 'Spray',       short: 'Sprays' },
+    { id: 'cig',   label: 'Cigarette',   short: 'Cigarettes' }
   ];
   var MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
   var DAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
@@ -230,7 +237,7 @@ h2.sec { font-size: 1rem; margin: 0 0 8px; }
   function typeById(id) { for (var i = 0; i < TYPES.length; i++) { if (TYPES[i].id === id) { return TYPES[i]; } } return null; }
 
   /* ---------- Agrégation ---------- */
-  function emptyCounts() { return { patch: 0, gum: 0, spray: 0 }; }
+  function emptyCounts() { return { patch: 0, gum: 0, spray: 0, cig: 0 }; }
   function buildIndex() {
     var map = {};
     for (var i = 0; i < events.length; i++) {
@@ -242,7 +249,7 @@ h2.sec { font-size: 1rem; margin: 0 0 8px; }
     }
     return map;
   }
-  function sumCounts(c) { return c.patch + c.gum + c.spray; }
+  function sumCounts(c) { return c.patch + c.gum + c.spray + c.cig; }
   function round1(x) { return (Math.round(x * 10) / 10).toString().replace('.', ','); }
 
   /* ---------- Petit utilitaire DOM ---------- */
@@ -386,7 +393,7 @@ h2.sec { font-size: 1rem; margin: 0 0 8px; }
       var total = sumCounts(d.c);
       col.title = d.label + ' : ' + total;
       // du haut vers le bas : spray, gomme, patch (le patch est en bas)
-      ['spray', 'gum', 'patch'].forEach(function (k) {
+      ['cig', 'spray', 'gum', 'patch'].forEach(function (k) {
         if (d.c[k] > 0) {
           var seg = el('div', 'seg ' + k);
           seg.style.height = Math.max(3, Math.round(d.c[k] / max * H)) + 'px';
@@ -526,7 +533,7 @@ h2.sec { font-size: 1rem; margin: 0 0 8px; }
     var table = el('table', 'hist');
     var thead = el('thead');
     var hr = el('tr');
-    ['Mois', 'Patchs', 'Gommes', 'Sprays', 'Moy./jour*'].forEach(function (h) { hr.appendChild(el('th', null, h)); });
+    ['Mois', 'Patchs', 'Gommes', 'Sprays', 'Cigarettes', 'Moy./jour*'].forEach(function (h) { hr.appendChild(el('th', null, h)); });
     thead.appendChild(hr);
     table.appendChild(thead);
     var tbody = el('tbody');
